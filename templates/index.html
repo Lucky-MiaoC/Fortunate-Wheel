@@ -1,0 +1,1632 @@
+<!DOCTYPE html>
+
+<html lang="zh-cn">
+<!-- <head>头部，包括响应头、标签页标题、CSS的引用 -->
+
+<head>
+    <!-- 响应头 -->
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="网页版幸运转盘">
+    <meta name="author" content="网页版幸运转盘开发委员会-第20组">
+    <!-- 标签页标题 -->
+    <title>网页版幸运转盘</title>
+    <!-- CSS的引用 -->
+    <link href="..\static\css\bootstrap.min.css" rel="stylesheet">
+    <link href="..\static\css\bootstrap-table.min.css" rel="stylesheet">
+    <link href="..\static\css\bootstrap-select.min.css" rel="stylesheet">
+    <link href="..\static\css\all.min.css" rel="stylesheet">
+</head>
+
+<!-- <body>体部，包括HTML组件和JS代码，两者之间的分界是JS代码库的引用 -->
+
+<body>
+    <!-- HTML组件，采用boostrap框架 -->
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 页面标题栏 -->
+            <div class="col-md-12">
+                <blockquote class="blockquote">
+                    <h1 class="text-muted text-center" align="center">网页版幸运转盘</h1>
+                    <footer class="blockquote-footer text-right">来自：
+                        <cite>网页版幸运转盘开发委员会-第20组</cite>
+                    </footer>
+                    <footer class="blockquote-footer text-right">
+                        <cite>
+                            <font size="2" id='audio_tip'>当前音乐：无</font>
+                        </cite>
+                        <cite>
+                            <font size="2" id='voice_tip'>语音识别：OFF</font>
+                        </cite>
+                    </footer>
+                </blockquote>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- 音乐播放条 -->
+            <div class="col-md-12">
+                <!-- 背景音乐播放条 -->
+                <audio id="audio_id" style="width:100%;height:50%" controls autoplay loop>什么辣鸡浏览器居然不支持音乐播放条趁早卸载吧</audio>
+                <!-- 音效播放条，包括转动音效和停止音效，控制器隐藏不显示，由函数控制 -->
+                <audio id="sound_start" loop>什么辣鸡浏览器居然不支持音乐播放条趁早卸载吧</audio>
+                <audio id="sound_stop" preload>什么辣鸡浏览器居然不支持音乐播放条趁早卸载吧</audio>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- 给用户输入转盘标题的文本框 -->
+            <div class="col-md-8">
+                <div style="text-align:center;vertical-align:middle;">
+                    <input style="border:none; width:100%; height:100%; font-size:24px; background-color:#ececec;"
+                        class="text-muted text-center" type="text" value="请点击输入幸运转盘标题！">
+                </div>
+            </div>
+
+            <!-- 读取文件\加载音乐的组件（隐藏不显示，由函数调用） -->
+            <input type="file" id="select_data_file" style="display:none;"
+                accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain">
+            <input type="file" id="select_audio_file" style="display:none;" accept="audio/*">
+
+            <!-- 关键功能按钮 -->
+            <div class="col-md-4">
+                <div class="btn-group btn-block btn-group-sm" role="group" style="width:100%;height:100%">
+                    <button class="btn btn-success col-sm-6" type="button" onclick=selectDataFile()>
+                        读取文件
+                    </button>
+                    <button class="btn btn-success col-sm-6" type="button" onclick=selectAudioFile()>
+                        加载音乐
+                    </button>
+                    <button class="btn btn-success col-sm-6" type="button" onclick=selectSQL()>
+                        数据库查询
+                    </button>
+                    <button class="btn btn-success col-sm-6" type="button" onclick=voiceRecognition()>
+                        语音识别
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 清除浮动（增加空隙） -->
+        <div class="clearfix" style="margin-bottom: 1%;"></div>
+
+        <div class="row">
+            <!-- 幸运转盘停止后展示的消息横幅 -->
+            <div class="col-md-12">
+                <div class="alert alert-success alert-dismissable" id="select_alert"
+                    style="display: none; margin-bottom: 1%;">
+                    <button type="button" class="close" onclick="hide_alert()">
+                        ×
+                    </button>
+                    <h6>恭喜这个B被选中：</h6>
+                    <strong id="select_one">XXX</strong> 你就是全场最靓的仔！<a href="javascript:void(0);" class="alert-link"
+                        onclick="shield()">(屏蔽此人)</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- 幸运转盘参数设置下拉菜单 -->
+            <div class="col-md-8">
+                <div class="row">
+                    <div class="col-md-8 align-self-start">
+                        <div class="btn-group" role="group">
+                            <select class="form-control selectpicker show-tick" id="A" title="转盘样式"
+                                data-live-search="true" data-style="btn-primary">
+                                <option title="转盘样式：A">样式A</option>
+                                <option title="转盘样式：B">样式B</option>
+                                <option title="转盘样式：C">样式C</option>
+                            </select>
+                            <select class="form-control selectpicker show-tick" id="B" title="转盘速度"
+                                data-live-search="true" data-style="btn-primary">
+                                <option title="转盘速度：慢">慢</option>
+                                <option title="转盘速度：中">中</option>
+                                <option title="转盘速度：快">快</option>
+                            </select>
+                            <select class="form-control selectpicker show-tick" id="E" title="字体样式"
+                                data-live-search="true" data-style="btn-primary" multiple>
+                                <optgroup label="字体" data-max-options="1">
+                                    <option title="字体样式：Arial">Arial</option>
+                                    <option title="字体样式：微软雅黑">微软雅黑</option>
+                                    <option title="字体样式：宋体">宋体</option>
+                                    <option title="字体样式：楷体">楷体</option>
+                                </optgroup>
+                                <optgroup label="样式" data-max-options="2">
+                                    <option title="加粗">加粗</option>
+                                    <option title="斜体">斜体</option>
+                                </optgroup>
+                            </select>
+                            <select class="form-control selectpicker show-tick" id="F" title="字体大小"
+                                data-live-search="true" data-style="btn-primary">
+                                <option title="字体大小：15px">15px</option>
+                                <option title="字体大小：20px">20px</option>
+                                <option title="字体大小：25px">25px</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 幸运转盘启动和停止按钮 -->
+                    <div class="col-md-4 align-self-end">
+                        <div class="btn-group float-right" role="group">
+                            <button type="button" class="btn btn-danger" id="start_stop">
+                                开转自动停！
+                            </button>
+                            <button type="button" class="btn btn-danger" id="start" style="display: none;">
+                                吱呀吱呀转！
+                            </button>
+                            <button type="button" class="btn btn-danger" id="stop" style="display: none;">
+                                我说停停！
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- 幸运转盘本体 -->
+                    <div class="col-md-12">
+                        <!-- 画布3：样式 -->
+                        <canvas id="canvas3" alt="幸运转盘本体" width="1000px" height="1000px"
+                            style="position: absolute;"></canvas>
+                        <!-- 画布1：转盘 -->
+                        <canvas id="canvas1" alt="幸运转盘本体" width="1000px" height="1000px"
+                            style="position: absolute;"></canvas>
+                        <!-- 画布2：指针 -->
+                        <canvas id="canvas2" alt="幸运转盘本体" width="1000px" height="1000px"
+                            style="position: absolute;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 两个折叠卡片，前一个放规则，后一个放表格 -->
+            <div class="col-md-4">
+                <!-- 规则卡片 -->
+                <div id="card-66326">
+                    <div class="card">
+                        <div class="card-header bg-info">
+                            <a class="card-link collapsed text-white" data-toggle="collapse" data-parent="#card-66326"
+                                href="#card-element-1162">自定义规则</a>
+                        </div>
+                        <div id="card-element-1162" class="collapse">
+                            <div class="card-body">
+
+                                <!-- 标题1（系统参数调整） -->
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <blockquote class="blockquote">
+                                            <h4 class="text-muted text-center" align="center">系统参数调整</h4>
+                                            <footer class="blockquote-footer text-center">
+                                                <cite>注意：读取文件后必须选择指定显示数据列！</cite>
+                                            </footer>
+                                        </blockquote>
+                                    </div>
+                                </div>
+
+                                <!-- 停止模式与音效设置选择框 -->
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="btn-group btn-block" role="group">
+                                            <select class="form-control selectpicker show-tick" id="C" title="停止模式"
+                                                data-live-search="true" data-style="btn-primary">
+                                                <option title="停止模式：手动停止">手动停止</option>
+                                                <option title="停止模式：自动停止">自动停止</option>
+                                            </select>
+                                            <select class="form-control selectpicker show-tick" id="D" title="音效设置"
+                                                data-live-search="true" data-style="btn-primary">
+                                                <option title="音效设置：打开音效">打开音效</option>
+                                                <option title="音效设置：关闭音效">关闭音效</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 清除浮动（增加空隙） -->
+                                <div class="clearfix" style="margin-bottom: 1%;"></div>
+
+                                <!-- 指定显示数据列选择框 -->
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <select class="form-control selectpicker show-tick" id="title_selections"
+                                            title="选择指定显示数据列" data-live-search="true" data-style="btn-primary">
+                                            <option>无</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- 分割线 -->
+                                <hr style="filter: alpha(opacity=100,finishopacity=0,style=3)" width="100%"
+                                    color="#6f5499" size="5" />
+
+                                <!-- 标题2（指定条件抽取） -->
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <blockquote class="blockquote">
+                                            <h4 class="text-muted text-center" align="center">指定条件抽取</h4>
+                                            <footer class="blockquote-footer text-center">
+                                                <cite>注意：指定条件抽取只有在自动停止模式下生效！</cite>
+                                            </footer>
+                                        </blockquote>
+                                    </div>
+                                </div>
+
+                                <!-- 指定条件选择框 -->
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <select class="form-control selectpicker show-tick" id="N"
+                                            title="选择指定条件（切换重置条件）" data-live-search="true" data-style="btn-primary">
+                                            <option title="指定条件（切换重置条件）：无">无</option>
+                                            <option title="指定条件（切换重置条件）：下次被选中者">下次被选中者</option>
+                                            <option title="指定条件（切换重置条件）：从下次开始被选中者">从下次开始被选中者</option>
+                                            <option title="指定条件（切换重置条件）：自定义条件">自定义条件</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- 清除浮动（增加空隙） -->
+                                <div class="clearfix" style="margin-bottom: 1%;"></div>
+
+                                <!-- 自定义条件输入框，当指定条件为自定义条件时才显示出来 -->
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <form role="form">
+                                            <div class="form-group" style="display: none" id='condition_group'>
+                                                <blockquote class="blockquote">
+                                                    <footer class="blockquote-footer text-left">
+                                                        <cite>请自定义指定数据抽取条件，条件之间用 && 或 || 来连接：</cite>
+                                                    </footer>
+                                                    <footer class="blockquote-footer text-left">
+                                                        <cite>例：id <= 5 && 性别==男 || 学号==201930380000</cite>
+                                                    </footer>
+                                                    <footer class="blockquote-footer text-left">
+                                                        <cite>无需双引号、不能带括号、所有符号两边必须带空格</cite>
+                                                    </footer>
+                                                </blockquote>
+                                                <textarea class="form-control" rows="3"
+                                                    style="font-size:12px; background-color:#ffffff;"
+                                                    id="condition"></textarea>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                <!-- 抽取模式输入框 -->
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <select class="form-control selectpicker show-tick" id="M"
+                                            title="选择抽取模式（切换重置倍率）" data-live-search="true" data-style="btn-primary">
+                                            <option title="抽取模式（切换重置倍率）：无">无</option>
+                                            <option title="抽取模式（切换重置倍率）：提高下次抽取倍率">提高下次抽取倍率</option>
+                                            <option title="抽取模式（切换重置倍率）：从下次开始逐步提高抽取倍率">从下次开始逐步提高抽取倍率</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- 清除浮动（增加空隙） -->
+                                <div class="clearfix" style="margin-bottom: 1%;"></div>
+
+                                <!-- 自定义条件输入框，当抽取模式不为无时显示出来 -->
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <form role="form">
+                                            <div class="form-group" style="display: none" id='probability_group'>
+                                                <blockquote class="blockquote">
+                                                    <footer class="blockquote-footer text-left">
+                                                        <cite>请指定抽取倍率：</cite>
+                                                    </footer>
+                                                </blockquote>
+                                                <input class="form-control"
+                                                    style="font-size:12px; background-color:#ffffff;" type="text"
+                                                    value="1" id='probability'>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 表格卡片 -->
+                <div id="card-66327">
+                    <div class="card">
+                        <div class="card-header bg-info">
+                            <a class="card-link collapsed text-white" data-toggle="collapse" data-parent="#card-66327"
+                                href="#card-element-949192">数据项目</a>
+                        </div>
+                        <div id="card-element-949192" class="collapse">
+                            <div class="card-body">
+                                <div id="toolbar">
+                                    <button id="remove" class="btn btn-danger" disabled>
+                                        <i class="fa fa-trash"></i> Delete
+                                    </button>
+                                    <button id="add" class="btn btn-danger">
+                                        <i class="fa fa-trash"></i> Add
+                                    </button>
+                                </div>
+                                <table id="table_card"></table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 编辑表格时弹出的修改框，平时隐藏，由编辑按钮调用 -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="modal fade" id="myModal" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="myModalLabel">
+                                    数据编辑框
+                                </h5>
+                                <button type="button" class="close" data-dismiss="modal">
+                                    <span aria-hidden="true">×</span>
+                                </button>
+                            </div>
+
+                            <div class="modal-body">
+                                <form class="form-horizontal" id="myModalBody">
+                                    <div class="form-group has-success">
+                                        <label class="col-sm-4 control-label">此段代码由js生成，此为大致样貌</label>
+                                        <div class="col-sm-8">
+                                            <input style="width:150%; height:100%; font-size:15px"
+                                                class="text-muted text-left" type="text" value="" id="model_i">
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary" id="edit_save">
+                                    保存
+                                </button>
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                    关闭
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 末尾标签栏 -->
+        <div class="row">
+            <div class="col-md-12">
+                <blockquote class="blockquote">
+                    <footer class="blockquote-footer text-right">
+                        <cite>非常感谢您的使用！</cite>
+                    </footer>
+                    <footer class="blockquote-footer text-right">
+                        <cite>网站最后一次更新：2021/11/27 请注意时效性！</cite>
+                    </footer>
+                </blockquote>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS库引用，再往下是JS代码部分 -->
+    <script src="..\static\js\popper.min.js"></script>
+    <script src="..\static\js\tether.min.js"></script>
+    <script src="..\static\js\jquery.min.js"></script>
+    <script src="..\static\js\bootstrap.min.js"></script>
+    <script src="..\static\js\scripts.js"></script>
+    <script src="..\static\js\xlsx.js"></script>
+
+    <script src="..\static\js\bootstrap-select.min.js"></script>
+    <script src="..\static\js\bootstrap-table.min.js"></script>
+    <script src="..\static\js\bootstrap-table-zh-CN.min.js"></script>
+    <script src="..\static\js\defaults-zh_CN.min.js"></script>
+    <script src="..\static\js\all.min.js"></script>
+    <script type="text/javascript">
+        // 定义数组差集的运算
+        Array.prototype.difference_set = function (a) { return this.filter(function (i) { return a.indexOf(i) < 0; }); };
+        // 定义数组交集的运算
+        Array.prototype.intersection = function (a) { return this.filter(function (i) { return a.indexOf(i) > -1; }); };
+        // 定义数组并集的运算
+        Array.prototype.union = function (a) { return this.difference_set(this.intersection(a)).concat(a.difference_set(this.intersection(a))).concat(this.intersection(a)) };
+
+
+
+
+        /* 初始化默认数据和全局变量 */
+
+        // 默认数据、默认数据标题、默认指定显示数据列
+        const default_data =
+            [{ "id": 0, "姓名": "熊大", "性别": "男", "学号": 201930380000 },
+            { "id": 1, "姓名": "熊二", "性别": "男", "学号": 201930380001 },
+            { "id": 2, "姓名": "张三", "性别": "男", "学号": 201930380002 },
+            { "id": 3, "姓名": "李四", "性别": "男", "学号": 201930380003 },
+            { "id": 4, "姓名": "王五", "性别": "男", "学号": 201930380004 },
+            { "id": 5, "姓名": "赵六", "性别": "女", "学号": 201930380005 },
+            { "id": 6, "姓名": "钱七", "性别": "女", "学号": 201930380006 },
+            { "id": 7, "姓名": "孙八", "性别": "女", "学号": 201930380007 },
+            { "id": 8, "姓名": "田九", "性别": "女", "学号": 201930380008 },
+            { "id": 9, "姓名": "轩十", "性别": "女", "学号": 201930380009 },
+            { "id": 10, "姓名": "狗蛋", "性别": "无", "学号": 201930380010 }];
+
+        const default_data_titles = ["id", "姓名", "性别", "学号"];
+        const default_title_selection = "姓名";
+
+        // 幸运转盘样式图片参数（分别是中心图片的宽高、周围图片的宽高）
+        const style_image = { "样式A": [255, 255, 1000, 1000], "样式B": [255, 255, 1000, 1000], "样式C": [255, 255, 800, 800] };
+
+        // 当前数据、当前数据标题、当前指定显示数据列
+        var current_data = default_data;
+        var current_data_titles = default_data_titles;
+        var current_title_selection = default_title_selection;
+
+        // 幸运转盘设置参数
+        var fortunate_wheel_image = '样式A';
+        var speed = '中';
+        var text_font_style = ['Arial', '加粗'];
+        var text_font_size = '20px';
+
+        // 系统设置参数
+        var start_stop_value = '自动停止';
+        var sound_setting = '关闭音效';
+
+        // 指定条件抽取参数
+        var specify_condition = '无';
+        var select_mode = '无';
+
+        // 收集选中的用于隐藏的数据行
+        var hidden_selections = [];
+        // 横幅中被屏蔽的对象
+        var shield_one = '';
+        // 最终展现在幸运转盘和用于数据抽取的数据
+        var select_datas = [];
+
+        const centerX = 500; // 幸运转盘中心x坐标
+        const centerY = 500; // 幸运转盘中心y坐标
+
+        var canvas1 = null;	// 定义绘制转盘的画布
+        var canvas2 = null; // 定义绘制转盘指针的画布
+        var canvas3 = null; // 定义绘制转盘样式的画布
+
+        // 初始化转盘画布和指针画布
+        var myCanvas1 = document.getElementById("canvas1");
+        canvas1 = myCanvas1.getContext("2d");
+        var myCanvas2 = document.getElementById("canvas2");
+        canvas2 = myCanvas2.getContext("2d");
+        var myCanvas3 = document.getElementById("canvas3");
+        canvas3 = myCanvas3.getContext("2d");
+
+        var myInterval = null; // 初始化指针自动旋转器
+
+        var angle = 0; // 初始化指针旋转的目标角度
+
+        var edit_index = ''; // 专门用于存储表格中被编辑的数据行号
+
+        var condition = ''; // 初始化自定义指定条件
+        var probability = 1; // 初始化指定条件抽取倍率
+        var conditional_selections = []; // 初始化被指定条件抽取所抽到的对象
+
+
+
+
+        /* 初始化直接调用函数（通常由按钮触发） */
+
+        // 选择数据文件
+        function selectDataFile() { document.getElementById('select_data_file').click(); }
+        // 选择音乐文件
+        function selectAudioFile() { document.getElementById('select_audio_file').click(); }
+        // 选择数据库数据
+        function selectSQL() { alert('暂不支持此功能！'); }
+        // 语音识别开关
+        function voiceRecognition() { alert('暂不支持此功能！'); }
+
+        // 隐藏幸运转盘停止时弹出的横幅
+        function hide_alert() { document.getElementById("select_alert").style.display = "none"; }
+
+        // 获取横幅上“屏蔽此人”中被选中的人的字符串，用于隐藏
+        function shield() {
+            shield_one = document.getElementById("select_one").innerText;
+            $('#table_card').bootstrapTable('checkBy', { field: current_title_selection, values: [shield_one] });
+            $('#table').bootstrapTable('refresh');
+        }
+
+        // 指定条件抽取的文字被点击时复选框也会被选中
+        function click_1() { document.getElementById('condition_selection_1').click(); }
+        function click_2() { document.getElementById('condition_selection_2').click(); }
+
+
+
+
+        /* 初始化默认调用函数（$号开头的无名函数，在网页加载完毕自动调用） */
+
+        // 默认卡片状态：展开
+        $(function () { $('#card-element-1162').collapse('show') });
+        $(function () { $('#card-element-949192').collapse('show') });
+
+        // 初始化幸运转盘参数
+        $(function () {
+            $('#A').selectpicker('val', '样式A');
+            $('#B').selectpicker('val', '中');
+            $('#E').selectpicker('val', ['Arial', '加粗']);
+            $('#F').selectpicker('val', '20px');
+        });
+
+        // 初始化系统参数
+        $(function () {
+            $('#C').selectpicker('val', '自动停止');
+            $('#D').selectpicker('val', '关闭音效');
+        });
+
+        // 初始化指定条件抽取参数
+        $(function () {
+            $('#N').selectpicker('val', '无');
+            $('#M').selectpicker('val', '无');
+        });
+
+        // 初始化数据表格
+        $(function () { initTable(); });
+
+        // 初始化幸运转盘
+        $(function () { showFortunateWheel(); });
+
+        // 初始化指定显示数据列下拉菜单
+        $(function () {
+            changeTitleSelection();
+            $('#title_selections').selectpicker('val', '姓名');
+        });
+
+        // 初始化幸运转盘转动和停止音效
+        $(function () {
+            let file_start = "..\\static\\转动音效.mp3";
+            let file_stop = "..\\static\\停止音效.mp3";
+
+            document.getElementById('sound_start').src = file_start;
+            document.getElementById('sound_stop').src = file_stop;
+        });
+
+
+
+
+        /* 初始化监听函数（组件监听事件发生时调用） */
+
+        // 入口函数
+        $(function () {
+            // 捕获加载的音乐文件
+            document.getElementById('select_audio_file').addEventListener('change', function (event) {
+                let file = readFile(event);
+
+                if (/([\.MP3]|[\.wav])$/g.test(file.name)) {
+                    creatMusicPlayerBar(file, 'audio_id');
+                    document.getElementById('audio_tip').innerHTML = "当前音乐：" + file.name;
+                }
+
+                else {
+                    alert('仅支持读取mp3或wav文件！');
+                    return undefined;
+                }
+            });
+
+            // 捕获加载的数据文件
+            document.getElementById('select_data_file').addEventListener('change', async function (event) {
+                let file = readFile(event);
+
+                if (/\.xlsx$/g.test(file.name)) {
+                    current_data = await readXlsxData(file);
+                }
+
+                else if (/\.txt$/g.test(file.name)) {
+                    current_data = await readTxtData(file);
+                }
+
+                else {
+                    alert('仅支持读取xlsx或txt文件！');
+                    return undefined;
+                }
+
+                getNewTitle();
+
+                if (current_data_titles.length == 0) {
+                    alert("数据格式有误！");
+                    return undefined;
+                }
+
+                changeTitleSelection();
+
+                // 未选择指定数据列前不显示幸运转盘（清空幸运转盘）
+                current_title_selection = '';
+                canvas1.clearRect(0, 0, 1000, 1000);
+                canvas2.clearRect(-500, -500, 1000, 1000);
+                canvas3.clearRect(0, 0, 1000, 1000);
+
+                initTable();
+
+                probability = 1;
+                conditional_selections.splice(0);
+            });
+
+            // 捕获指定显示数据列下拉菜单的值变化
+            document.getElementById('title_selections').addEventListener('change', function (event) {
+                current_title_selection = $('#title_selections').val();
+                showFortunateWheel();
+            });
+
+            // 捕获转盘样式更改
+            document.getElementById('A').addEventListener('change', function (event) {
+                fortunate_wheel_image = $('#A').val();
+                if (current_title_selection != '') {
+                    showFortunateWheel();
+                }
+            });
+
+            // 捕获转盘速度更改
+            document.getElementById('B').addEventListener('change', function (event) {
+                speed = $('#B').val();
+            });
+
+            // 捕获停止模式更改
+            document.getElementById('C').addEventListener('change', function (event) {
+                start_stop_value = $('#C').val();
+                changeStarStopButton();
+            });
+
+            // 捕获音效设置更改
+            document.getElementById('D').addEventListener('change', function (event) {
+                sound_setting = $('#D').val();
+            });
+
+            // 捕获字体样式更改
+            document.getElementById('E').addEventListener('change', function (event) {
+                text_font_style = $('#E').val();
+
+                // 至少选择一种样式，否则为默认Arial
+                let text_font_style_first = text_font_style[0];
+                if (text_font_style_first != 'Arial' && text_font_style_first != '微软雅黑' && text_font_style_first != '宋体' && text_font_style_first != '楷体') {
+                    text_font_style.unshift('Arial');
+                    $('#E').selectpicker('val', text_font_style);
+                }
+
+                if (current_title_selection != '') {
+                    showFortunateWheel();
+                }
+            });
+
+            // 捕获字体大小更改
+            document.getElementById('F').addEventListener('change', function (event) {
+                text_font_size = $('#F').val();
+
+                if (current_title_selection != '') {
+                    showFortunateWheel();
+                }
+            });
+
+            // 捕获指定条件更改
+            document.getElementById('N').addEventListener('change', function (event) {
+                specify_condition = $('#N').val();
+
+                if (specify_condition == '自定义条件') {
+                    document.getElementById('condition_group').style.display = "";
+                }
+                else {
+                    document.getElementById('condition_group').style.display = 'none';
+                }
+
+                probability = 1;
+                conditional_selections.splice(0);
+            });
+
+            // 捕获抽取模式更改
+            document.getElementById('M').addEventListener('change', function (event) {
+                select_mode = $('#M').val();
+
+                if (select_mode != '无') {
+                    document.getElementById('probability_group').style.display = "";
+                }
+                else {
+                    document.getElementById('probability_group').style.display = 'none';
+                }
+
+                probability = 1;
+                conditional_selections.splice(0);
+            });
+
+            // 开转！
+            document.getElementById('start').addEventListener('click', function (event) {
+                if (current_data == null) {
+                    alert('缺少数据！');
+                    return undefined;
+                }
+
+                if (current_title_selection == '') {
+                    alert('未指定显示数据列！');
+                    return undefined;
+                }
+
+                runPoint();
+            });
+
+            // 停止！
+            document.getElementById('stop').addEventListener('click', function (event) {
+                if (myInterval == null) {
+                    alert("还没开始转呢，停NM！");
+                    return undefined;
+                }
+
+                stopPoint();
+            });
+
+            // 开转自动停！
+            document.getElementById('start_stop').addEventListener('click', function (event) {
+                if (current_data == null) {
+                    alert('缺少数据！');
+                    return undefined;
+                }
+
+                if (current_title_selection == '') {
+                    alert('未指定显示数据列！');
+                    return undefined;
+                }
+
+                try {
+                    runAndStopPoint();
+                }
+                catch {
+                    return undefined;
+                }
+            });
+        });
+
+
+
+
+        /* 依赖函数（被上面三类函数调用的函数，实现功能的函数） */
+
+        // 创建音乐播放条
+        function creatMusicPlayerBar(file, id) {
+            let url_audio = URL.createObjectURL(file);
+            document.getElementById(id).src = url_audio;
+        }
+
+        // 读取文件
+        function readFile(event) {
+            let files = event.target.files;
+
+            if (files.length == 0) {
+                alert('未能成功读取文件！');
+                return undefined;
+            }
+
+            let file = files[0];
+
+            if (file.size > 10 * 1024 * 1024) {
+                alert('文件不能大于10MB！');
+                return undefined;
+            }
+
+            return file;
+        }
+
+        // 读取xlsx数据，返回json格式的数据，允许某些项为空
+        async function readXlsxData(file) {
+            let reader = new FileReader();
+            reader.readAsBinaryString(file);
+
+            let event = await new Promise((resolve) => {
+                reader.onload = resolve;
+            });
+
+            let data = event.target.result;
+            let workbook = XLSX.read(data, { type: 'binary' });
+
+            let sheetnames = workbook.SheetNames;
+            let worksheet = workbook.Sheets[sheetnames[0]];
+
+            // 给空单元格赋值为空的字符串
+            const json_option = { defval: '' };
+
+            let xlsx_data = XLSX.utils.sheet_to_json(worksheet, json_option);
+
+            // console.log(xlsx_data);
+            return xlsx_data;
+        }
+
+        // 读取txt数据，返回json格式的数据，自动过滤空白符（txt数据必须以空格或者回车作为数据分隔，只能单一数据列，数据标题为item）
+        async function readTxtData(file) {
+            let reader = new FileReader();
+            reader.readAsText(file, "utf-8");
+
+            let event = await new Promise((resolve) => {
+                reader.onload = resolve;
+            });
+
+            let data = event.target.result;
+            data = data.split(/[\s\n]/).filter(Boolean);
+
+            let txt_data = new Array();
+            data.forEach((i) => txt_data.push({ "item": i }));
+
+            // console.log(txt_data);
+            return txt_data;
+        }
+
+        // 获取数据标题
+        function getNewTitle() {
+            // 清空旧的数据标题
+            current_data_titles.splice(0, current_data_titles.length);
+
+            for (var key in current_data[0]) {
+                current_data_titles.push(key);
+            }
+        }
+
+        // 更改指定显示数据列下拉菜单
+        function changeTitleSelection() {
+            let html0 = '<option title="指定显示的数据列为：';
+            let html1 = '">';
+            let html2 = '</option>';
+            let html = '';
+
+            current_data_titles.forEach((i) => {
+                html = html + html0 + i + html1 + i + html2;
+            });
+
+            document.getElementById('title_selections').innerHTML = html;
+            $('#title_selections').selectpicker('refresh');
+        }
+
+        // 更改停止模式的按钮
+        function changeStarStopButton() {
+            if (start_stop_value == "手动停止") {
+                document.getElementById("start_stop").style.display = "none";
+                document.getElementById("start").style.display = "";
+                document.getElementById("stop").style.display = "";
+            }
+            if (start_stop_value == "自动停止") {
+                document.getElementById("start_stop").style.display = "";
+                document.getElementById("start").style.display = "none";
+                document.getElementById("stop").style.display = "none";
+            }
+        }
+
+        // 展示幸运转盘
+        function showFortunateWheel() {
+            // 让还在转的指针停下来
+            if (myInterval != null) {
+                stopPoint();
+                angle = 0;
+            }
+
+            // 通过重新设置画布的宽高来清空画布
+            myCanvas1.width = 1000;
+            myCanvas1.height = 1000;
+            myCanvas2.width = 1000;
+            myCanvas2.height = 1000;
+            myCanvas3.width = 1000;
+            myCanvas3.height = 1000;
+
+            // 绘制样式
+            drawStyleImage();
+
+            // 绘制转盘
+            drawWheel();
+
+            // 初始化转盘指针
+            canvas2.translate(centerX, centerY);
+            drawPoint();
+        }
+
+        // 绘制转盘样式
+        function drawStyleImage() {
+            createSurroundImage(); // 绘制周围样式
+            createCenterImage(); // 绘制中心样式
+
+            // 绘制转盘中心图片
+            function createCenterImage() {
+                let image_path = '..\\static\\' + fortunate_wheel_image + '.png';
+                let width_center = style_image[fortunate_wheel_image][0];
+                let height_center = style_image[fortunate_wheel_image][1];
+                let image_file = new Image();
+                image_file.onload = function () {
+                    canvas3.drawImage(image_file, x = centerX - width_center / 2, y = centerY - height_center / 2, width = width_center, height = height_center);
+                }
+                image_file.src = image_path;
+            }
+
+            // 绘制转盘周围图片
+            function createSurroundImage() {
+                let image_path = '..\\static\\' + fortunate_wheel_image + '_.png';
+                let width_surround = style_image[fortunate_wheel_image][2];
+                let height_surround = style_image[fortunate_wheel_image][3];
+                let image_file = new Image();
+                image_file.onload = function () {
+                    canvas3.drawImage(image_file, x = centerX - width_surround / 2, y = centerY - height_surround / 2, width = width_surround, height = height_surround);
+                }
+                image_file.src = image_path;
+            }
+        }
+
+        // 数据过滤
+        function dataFilter() {
+            select_datas.splice(0);
+
+            current_data.forEach(function (i) {
+                if (i[current_title_selection] != "")
+                    select_datas.push(i[current_title_selection]);
+            });
+
+            let hidden_data = [];
+            hidden_selections.forEach((i) => {
+                hidden_data.push(i[current_title_selection]);
+            })
+
+            select_datas = select_datas.difference_set(hidden_data);
+        }
+
+        // 绘制幸运转盘样式
+        function drawWheel() {
+            dataFilter();
+
+            let n = select_datas.length;
+
+            const color = ["rgba(209,66,120,0.6)", "rgba(149,63,174,0.6)", "rgba(88,104,55,0.6)", "rgba(199,199,111,0.6)",
+                "rgba(175,39,41,0.6)", "rgba(58,156,118,0.6)", "rgba(204,165,64,0.6)", "rgba(89,152,254,0.6)",
+                "rgba(82,219,83,0.6)", "rgba(254,184,52,0.6)", "rgba(111,111,0,0.6)"]; // 定义圆环背景颜色
+            let startAngle = 0; // 定义起始弧度变量
+            let endAngle = 0; // 定义终止弧度变量
+
+            createCircle2(); // 绘制最外层转盘圆环
+            createCircle1(); // 绘制中间层转盘圆环
+            createCircle0(); // 绘制最内层转盘圆环
+            createText(); // 绘制转盘上的字
+
+            // 绘制最外层转盘圆环
+            function createCircle2() {
+                for (let i = 0; i < n; i++) {
+                    canvas1.save(); // 保存当前扇形绘画状态
+                    canvas1.beginPath(); // 开始绘制
+                    startAngle = Math.PI * (2 / n) * i; // 起始弧度
+                    endAngle = Math.PI * (2 / n) * (i + 1); // 终止弧度
+                    canvas1.arc(centerX, centerY, 255, startAngle, endAngle, false); // 绘制扇形
+                    canvas1.lineWidth = 200.0; // 线宽
+                    canvas1.strokeStyle = color[i % color.length]; // 扇形边框颜色
+                    canvas1.stroke(); // 绘制空心圆
+                    canvas1.restore(); // 回复之前保存的状态
+                }
+            }
+
+            // 绘制中间层转盘圆环
+            function createCircle1() {
+                for (let i = 0; i < n; i++) {
+                    canvas1.save(); // 保存当前扇形绘画状态
+                    canvas1.beginPath(); // 开始绘制
+                    startAngle = Math.PI * (2 / n) * i; // 起始弧度
+                    endAngle = Math.PI * (2 / n) * (i + 1); // 终止弧度
+                    canvas1.arc(centerX, centerY, 250, startAngle, endAngle, false); // 绘制扇形
+                    canvas1.lineWidth = 180.0; //定义线宽
+                    canvas1.strokeStyle = color[i % color.length]; // 扇形边框颜色
+                    canvas1.stroke(); // 绘制空心圆
+                    canvas1.restore(); // 回复之前保存的状态
+                }
+            }
+
+            // 绘制最内层转盘圆环
+            function createCircle0() {
+                for (let i = 0; i < n; i++) {
+                    canvas1.save(); // 保存当前扇形绘画状态
+                    canvas1.beginPath(); // 开始绘制
+                    startAngle = Math.PI * (2 / n) * i; // 起始弧度
+                    endAngle = Math.PI * (2 / n) * (i + 1); // 终止弧度
+                    canvas1.arc(centerX, centerY, 195, startAngle, endAngle, false); // 绘制扇形
+                    canvas1.lineWidth = 170.0; // 定义线宽
+                    canvas1.strokeStyle = color[i % color.length]; // 扇形边框颜色
+                    canvas1.stroke(); // 绘制空心圆
+                    canvas1.restore(); // 回复之前保存的状态
+                }
+            }
+
+            // 绘制转盘上的字
+            function createText() {
+                // 字体样式
+                let text_font = '';
+                text_font_style.forEach((i) => {
+                    if (i == '加粗') { text_font += 'Bolder '; }
+                    if (i == '斜体') { text_font += 'Italic '; }
+                });
+                text_font += text_font_size;
+                text_font += ' ';
+                text_font += text_font_style[0];
+
+                canvas1.font = text_font;
+                canvas1.textAlign = 'start';
+                canvas1.textBaseline = 'middle';
+                canvas1.fillStyle = "#000";
+
+                // 绘制字
+                let step = 2 * Math.PI / n;
+                for (let i = 0; i < n; i++) {
+                    canvas1.save();
+                    canvas1.beginPath();
+                    canvas1.translate(centerX, centerY);
+                    canvas1.rotate(i * step + step / 2);
+                    canvas1.fillText(select_datas[i], 200, 0);
+                    canvas1.restore();
+                }
+            }
+        }
+
+        // 绘制幸运转盘指针
+        function drawPoint() {
+            canvas2.beginPath();
+            canvas2.moveTo(0, 2);
+            canvas2.lineTo(150, 2);
+            canvas2.lineTo(150, 4);
+            canvas2.lineTo(150 + 10, 0);
+            canvas2.lineTo(150, -4);
+            canvas2.lineTo(150, -2);
+            canvas2.lineTo(0, -2);
+            canvas2.fillStyle = "#C01020";
+            canvas2.fill();
+            canvas2.closePath();
+        }
+
+        // 初始化开转环境
+        function initRunPoint() {
+            // 让还在转的指针停下来
+            if (myInterval != null) {
+                clearInterval(myInterval);
+                myInterval = null;
+                angle = 0;
+            }
+
+            // 通过重新设置画布的宽高来清空画布
+            myCanvas2.width = 1000;
+            myCanvas2.height = 1000;
+
+            // 初始化转盘指针
+            canvas2.translate(centerX, centerY);
+            drawPoint();
+
+            // 音效控制
+            if (sound_setting == "打开音效") {
+                document.getElementById('sound_start').load();
+                document.getElementById('sound_stop').load();
+                document.getElementById('sound_start').play();
+            }
+        }
+
+        // 开转！
+        function runPoint() {
+            initRunPoint();
+
+            let step = 10;
+            if (speed == '快') {
+                step = 23; // 旋转角度间隔
+            }
+            else if (speed == '慢') {
+                step = 14; // 旋转角度间隔
+            }
+            else if (speed == '中') {
+                step = 17; // 旋转角度间隔
+            }
+
+            // 修正间隔，防止由于每个对象所占扇形太小导致的死等现象
+            let n = select_datas.length;
+            let per_angel = 1 / n * 360;
+            let random_anger = Math.random() * 5;
+            if (per_angel / 2 <= 2) { random_anger = Math.random() * step; }
+
+            // setInterval:每xx毫秒调用一次函数，直到clearInterval(myInterval)方法被触发
+            myInterval = setInterval(function (T) {
+                canvas2.save();
+                angle = angle + step + random_anger;
+                if (angle > 360) {
+                    angle -= 360;
+                }
+                canvas2.clearRect(-500, -500, 1000, 1000);
+                canvas2.rotate(angle * Math.PI / 180);
+                drawPoint();
+                canvas2.restore();
+            }, 10); //
+        }
+
+        // 停停！
+        function stopPoint() {
+            // 音效控制
+            if (sound_setting == "打开音效") {
+                document.getElementById('sound_start').load();
+                document.getElementById('sound_stop').load();
+                document.getElementById('sound_stop').play();
+            }
+
+            clearInterval(myInterval);
+            myInterval = null;
+
+            dataSelection();
+            angle = 0;
+        }
+
+        // 处理指定条件抽取的规则
+        function analyseConditions(i) {
+            let condition_meet = [];
+            try {
+                switch (i[1]) {
+                    case "==":
+                        current_data.forEach((j) => {
+                            if (j[i[0]] == i[2]) {
+                                condition_meet.push(j[current_title_selection]);
+                            }
+                        })
+                        return condition_meet;
+                    case "!=":
+                        current_data.forEach((j) => {
+                            if (j[i[0]] != i[2]) {
+                                condition_meet.push(j[current_title_selection]);
+                            }
+                        })
+                        return condition_meet;
+                    case ">":
+                        current_data.forEach((j) => {
+                            if (j[i[0]] > i[2]) {
+                                condition_meet.push(j[current_title_selection]);
+                            }
+                        })
+                        return condition_meet;
+                    case ">=":
+                        current_data.forEach((j) => {
+                            if (j[i[0]] >= i[2]) {
+                                condition_meet.push(j[current_title_selection]);
+                            }
+                        })
+                        return condition_meet;
+                    case "<":
+                        current_data.forEach((j) => {
+                            if (j[i[0]] < i[2]) {
+                                condition_meet.push(j[current_title_selection]);
+                            }
+                        })
+                        return condition_meet;
+                    case "<=":
+                        current_data.forEach((j) => {
+                            if (j[i[0]] <= i[2]) {
+                                condition_meet.push(j[current_title_selection]);
+                            }
+                        })
+                        return condition_meet;
+                    default:
+                        throw new Error("自定义指定数据抽取条件有误！请检查！");
+                }
+            }
+            catch (error) {
+                alert("自定义指定数据抽取条件有误！请检查！");
+            }
+        }
+
+        // 解析自定义条件
+        function deconstructConditions() {
+            condition = $('#condition').val();
+
+            let deconstruct_conditions_1 = [];
+            let deconstruct_conditions_2 = [];
+            let conditional_selections_temporary = [];
+
+            let j = condition.split(/[&&]|[||]/).filter(Boolean);
+            j.forEach((i) => {
+                let z = i.split(" ").filter(Boolean);
+                deconstruct_conditions_1.push(z);
+            })
+            // console.log(deconstruct_conditions_1);
+
+            deconstruct_conditions_2 = condition.match(/(\&\&)|(\|\|)/g);
+            // console.log(deconstruct_conditions_2);
+
+            deconstruct_conditions_1.forEach((i) => {
+                let v = analyseConditions(i);
+                conditional_selections_temporary.push(v);
+            })
+            // console.log(conditional_selections_temporary);
+
+            if (conditional_selections_temporary.length != 0) {
+                conditional_selections = conditional_selections_temporary[0];
+            }
+
+            let t = 1;
+            if (deconstruct_conditions_2 != null) {
+                deconstruct_conditions_2.forEach((i) => {
+                    if (i == "&&") {
+                        conditional_selections = conditional_selections.intersection(conditional_selections_temporary[t]);
+                    }
+                    else if (i == "||") {
+                        conditional_selections = conditional_selections.union(conditional_selections_temporary[t]);
+                    }
+                    t += 1;
+                })
+                // console.log(conditional_selections);
+            }
+        }
+
+        // 将修改倍率的模块提取出来
+        function modifyProbability(probability, select_datas_probability, n) {
+            if (specify_condition == '自定义条件') {
+                deconstructConditions();
+                getSelectDatasProbability();
+            }
+            else if (specify_condition == '下次被选中者') {
+                getSelectDatasProbability();
+            }
+            else if (specify_condition == '从下次开始被选中者') {
+                getSelectDatasProbability();
+            }
+            else if (specify_condition == '无') {
+                let basic_probability = 1 / n;
+                select_datas.forEach((i) => {
+                    select_datas_probability.push(basic_probability);
+                })
+            }
+
+            // 将修改倍率的模块再度提取出来
+            function getSelectDatasProbability() {
+                let basic_probability = 1 / n;
+                let m = conditional_selections.length;
+                let special_probability = basic_probability * probability;
+                let total_special_probability = special_probability * m;
+
+                if (total_special_probability > 1) {
+                    alert("你这总概率都超100%了让我怎么抽？？换个倍率吧！");
+                    throw new Error("总概率超100%！");
+                }
+                else {
+                    basic_probability = (1 - total_special_probability) / (n - m);
+                    select_datas.forEach((i) => {
+                        if (conditional_selections.indexOf(i) >= 0) {
+                            select_datas_probability.push(special_probability);
+                        }
+                        else {
+                            select_datas_probability.push(basic_probability);
+                        }
+                    })
+                }
+            }
+        }
+
+        // 处理指定条件抽取
+        function conditionSelection() {
+            let select_datas_probability = [];
+            let n = select_datas.length;
+
+            if (select_mode == "提高下次抽取倍率") {
+                probability = $('#probability').val();
+                modifyProbability(probability, select_datas_probability, n);
+            }
+            else if (select_mode == "从下次开始逐步提高抽取倍率") {
+                probability *= $('#probability').val();
+                modifyProbability(probability, select_datas_probability, n);
+            }
+            else if (select_mode == "无") {
+                let basic_probability = 1 / n;
+                select_datas.forEach((i) => {
+                    select_datas_probability.push(basic_probability);
+                })
+            }
+
+            // console.log(select_datas_probability);
+
+            // 找到随机抽取的目标
+            let m = Math.random();
+            let total_probability = 0;
+            let k = 0;
+            for (; ;) {
+                total_probability += select_datas_probability[k];
+                if (total_probability >= m) {
+                    break;
+                }
+                k += 1;
+            }
+            // console.log(select_datas[k]);
+            return k;
+        }
+
+        // 开转自动停！
+        function runAndStopPoint() {
+            initRunPoint();
+
+            let step = 10;
+            if (speed == '快') {
+                step = 37; // 旋转角度间隔
+            }
+            else if (speed == '慢') {
+                step = 27; // 旋转角度间隔
+            }
+            else if (speed == '中') {
+                step = 33; // 旋转角度间隔
+            }
+
+            // 处理指定条件抽取
+            let n = select_datas.length;
+            let k = conditionSelection();
+
+            // 构造目标范围
+            let per_angel = 1 / n * 360;
+            let judge_angle_start = per_angel * k + Math.random() * per_angel;
+            let judge_angle_end = per_angel * (k + 1);
+
+            // setInterval:每xx毫秒调用一次函数，直到clearInterval(myInterval)方法被触发
+            myInterval = setInterval(function (T) {
+                // 构造指针间隔
+                if ((step > 1) || (step <= 1 && step > per_angel / 2)) {
+                    step *= 0.99;
+                }
+                else {
+                    if (step <= per_angel / 2) { step = 1; }
+                    else { step = per_angel / 2; }
+                }
+
+                // 绘制指针
+                canvas2.save();
+                angle += step;
+                if (angle > 360) {
+                    angle -= 360;
+                }
+                canvas2.clearRect(-500, -500, 1000, 1000);
+                canvas2.rotate(angle * Math.PI / 180);
+                drawPoint();
+                canvas2.restore();
+
+                // 判断停止
+                if (angle >= judge_angle_start && angle < judge_angle_end && step <= 1 && step <= per_angel) {
+                    // console.log(step);
+                    stopPoint();
+                }
+
+            }, 10); //设定旋转的时间间隔（毫秒）
+        }
+
+        // 数据选择与处理
+        function dataSelection() {
+            dataFilter();
+
+            let interval_angle = 360 / select_datas.length;
+            let select_index = Math.floor(angle / interval_angle);
+
+            document.getElementById('select_one').innerHTML = select_datas[select_index];
+            document.getElementById("select_alert").style.display = "";
+
+            if (specify_condition == '无') {
+                conditional_selections.splice(0);
+                // console.log(conditional_selections);
+            }
+            else if (specify_condition == '下次被选中者') {
+                conditional_selections.splice(0);
+                conditional_selections.push(select_datas[select_index]);
+                // console.log(conditional_selections);
+            }
+            else if (specify_condition == '从下次开始被选中者') {
+                let flag = 0;
+                conditional_selections.forEach((i) => {
+                    if (i == select_datas[select_index]) {
+                        flag = 1;
+                    }
+                })
+                if (flag == 0) {
+                    conditional_selections.push(select_datas[select_index]);
+                    // console.log(conditional_selections);
+                }
+            }
+            else if (specify_condition == '自定义条件') {
+                conditional_selections.splice(0);
+                // console.log(conditional_selections);
+            }
+        }
+
+        // 初始化表格
+        function initTable() {
+            data_columns =
+                [{
+                    field: 'state', // 设定要绑定显示的json字段
+                    checkbox: true, // 表示该列为复选框选择列
+                    align: 'center', // 表格数据对齐方式 'left', 'right', 'center'
+                    valign: 'middle' // 垂直方向对齐方式 'top', 'middle', 'bottom'
+                }]
+            current_data_titles.forEach((i) => {
+                data_columns.push({
+                    field: i,
+                    title: i,
+                    align: 'center',
+                    valign: 'middle',
+                    sortable: true
+                });
+            })
+            data_columns.push({
+                field: 'operate',
+                title: '单行操作',
+                align: 'center',
+                valign: 'middle',
+                clickToSelect: false,
+                events: window.operateEvents,
+                formatter: operateFormatter
+            })
+
+            // 初始化表格属性
+            $('#table_card').bootstrapTable('destroy').bootstrapTable({
+
+                toolbar: "#toolbar", // 工具栏
+                // editable: true, // 是否启用编辑
+
+                // search: true, // 是否启用搜索框
+                showPaginationSwitch: true, // 是否显示切换分页按钮
+                showRefresh: false, // 是否显示刷新按钮
+                showToggle: true, // 是否显示切换视图（table/card）按钮
+                showFullscreen: true, // 是否显示全屏按钮
+                showColumns: true, // 是否显示内容列下拉框（用于隐藏列）
+
+                height: 800, // 定义表格的高度
+                idField: current_data_titles[0], // 指定主键列
+                minimumCountColumns: 1, // 最小隐藏列的数量
+                clickToSelect: true, // 是否启用点击选中行
+                striped: true, // 是否设置表格隔行变色效果
+
+                pageList: [10, 25, 50, 100, 'ALL'], // 如果设置了分页，设置可供选择的页面数据条数
+                pagination: true, // 是否在表格底部显示分页条
+                sidePagination: "client", // 设置在哪里进行分页
+                maintainSelected: true, // 是否在点击分页按钮或搜索按钮时，记住checkbox的选择项
+
+                data: current_data,
+
+                columns: data_columns
+            })
+        }
+
+        // 获取选中数据行ID
+        function getIdSelections() {
+            return $.map($('#table_card').bootstrapTable('getSelections'), function (row) {
+                return row[current_data_titles[0]];
+            });
+        }
+
+        // 操作列里的图标样式
+        function operateFormatter(value, row, index) {
+            return [
+                '<a class="edit" href="javascript:void(0)" title="Edit">',
+                '<i class="fa fa-pencil-square"></i>',
+                '</a>',
+
+                '<a class="remove" href="javascript:void(0)" title="Remove">',
+                '<i class="fa fa-trash"></i>',
+                '</a>'
+            ].join('');
+        }
+
+        // 注册按钮组事件
+        window.operateEvents = {
+            'click .remove': function (e, value, row, index) {
+                current_data.splice(index, 1);
+
+                $('#table_card').bootstrapTable('remove', {
+                    field: current_data_titles[0],
+                    values: [row[current_data_titles[0]]]
+                });
+
+                if (current_title_selection != '') {
+                    showFortunateWheel();
+                }
+            },
+
+            'click .edit': function (e, value, row, index) {
+                edit_index = index;
+                showEditModal(e, value, row, index);
+            }
+        }
+
+        // 构建编辑表格时弹出的修改框并让其显示出来
+        function showEditModal(e, value, row, index) {
+            let html = '';
+            current_data_titles.forEach((i) => {
+                html += '<div class="form-group">';
+                html += '<label class="col-sm-4 control-label">';
+                html += i;
+                html += '</label>';
+                html += '<div class="col-sm-8">';
+                html += '<input style="width:150%; height:100%; font-size:15px" class="text-muted text-left" type="text" value="';
+                html += row[i];
+                html += '" id="model_';
+                html += i;
+                html += '">';
+                html += '</div></div>';
+            })
+
+            document.getElementById('myModalBody').innerHTML = html;
+            $("#myModal").modal();
+        }
+
+        // 保存编辑过的数据（默认调用函数）
+        $("#edit_save").click(function () {
+            $('#myModal').modal('hide');
+
+            let edited_data = {};
+            current_data_titles.forEach((i) => {
+                let j = "#model_" + i;
+                let i_data = $(j).val();
+                edited_data[i] = i_data;
+                current_data[edit_index][i] = i_data;
+            })
+            // console.log(edited_data);
+
+            $('#table_card').bootstrapTable("updateRow", {
+                index: edit_index,
+                row: edited_data
+            });
+
+            $('#table_card').bootstrapTable('refresh');
+            if (current_title_selection != '') {
+                showFortunateWheel();
+            }
+        })
+
+        // 处理选中筛选框后按钮的状态统一变更（默认调用函数）
+        $('#table_card').on('check.bs.table uncheck.bs.table check-all.bs.table uncheck-all.bs.table', function () {
+            // 设置工具栏删除按钮状态为可用或不可用
+            $('#remove').prop('disabled', !$('#table_card').bootstrapTable('getSelections').length);
+
+            // 收集被选中的行
+            let hidden_ones = $('#table_card').bootstrapTable('getSelections');
+
+            hidden_selections.splice(0, hidden_selections.length);
+            hidden_ones.forEach((i) => {
+                hidden_selections.push(i);
+            });
+            // console.log(hidden_selections);
+
+            if (current_title_selection != '') {
+                showFortunateWheel();
+            }
+        })
+
+        // 获取某一数据所在位置，此为通用函数，但主要用于获取表格被删除元素index
+        function getIndex(data) {
+            let j = current_data_titles[0];
+            for (let i = 0; i < current_data.length; i++) {
+                if (current_data[i].j == data.j) {
+                    return i;
+                }
+            }
+        }
+
+        // 处理点击删除按钮事件（默认调用函数）
+        $('#remove').click(function () {
+            var ids = getIdSelections();
+
+            remove_selections = $('#table_card').bootstrapTable('getSelections');
+            remove_selections.forEach((i) => {
+                i_index = getIndex(i);
+                current_data.splice(i, 1);
+            });
+            // console.log(current_data);
+
+            $('#table_card').bootstrapTable('remove', {
+                field: current_data_titles[0],
+                values: ids
+            });
+
+            $('#remove').prop('disabled', true);
+
+            if (current_title_selection != '') {
+                showFortunateWheel();
+            }
+        })
+
+        // 处理点击增加按钮事件（默认调用函数）
+        $('#add').click(function () {
+            insert_data = {};
+            current_data_titles.forEach((i) => {
+                insert_data[i] = '';
+            });
+
+            current_data.unshift(insert_data);
+            // console.log(current_data);
+
+            $("#table_card").bootstrapTable('insertRow', { index: 0, row: insert_data });
+            $('#table_card').bootstrapTable('refresh');
+
+            if (current_title_selection != '') {
+                showFortunateWheel();
+            }
+        })
+    </script>
+</body>
+
+</html>

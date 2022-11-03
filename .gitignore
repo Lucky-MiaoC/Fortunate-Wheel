@@ -1,0 +1,9 @@
+# 排除vscode配置
+.vscode
+
+# 排除所有.开头的文件，但不排除.gitignore本身
+.*
+!.gitignore
+
+# 排除虚拟环境，需要可根据README.md文档重新构建
+/虚拟环境
