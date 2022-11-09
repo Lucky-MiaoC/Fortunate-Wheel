@@ -1,5 +1,6 @@
 '''此为后端代码，但主要功能均在前端实现'''
 
+import sys
 from flask import Flask
 from flask import render_template
 
@@ -18,4 +19,5 @@ def page_not_found(error):
 
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5000, debug=False)
+    port = int(sys.argv[1]) if len(sys.argv) >= 2 else 5000
+    app.run(host='127.0.0.1', port=port, debug=False)
